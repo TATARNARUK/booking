@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: booking_db_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: booking_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - booking_net
+
+  web:
+    build: .
+    container_name: booking_web_php
+    restart: always
+    ports:
+      - "8081:80"
+    volumes:
+      - ./src:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_NAME=booking_db
+      - DB_USER=admin
+      - DB_PASS=password
+    depends_on:
+      - db
+    networks:
+      - booking_net
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: booking_phpmyadmin
+    restart: always
+    ports:
+      - "8080:80" 
+    environment:
+      PMA_HOST: db
+      PMA_USER: admin
+      PMA_PASSWORD: password
+    depends_on:
+      - db
+    networks:
+      - booking_net
+
+volumes:
+  mysql_data:
+
+networks:
+  booking_net:
+    driver: bridge
