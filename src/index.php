@@ -126,6 +126,19 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .room-card .card-body {
             padding: 5px 0;
         }
+
+        /* เพิ่มเอฟเฟกต์สำหรับ Landing Page */
+        .transition-hover {
+            transition: all 0.3s ease;
+        }
+
+        .transition-hover:hover {
+            transform: translateY(-10px);
+        }
+
+        .hover-white:hover {
+            color: #ffffff !important;
+        }
     </style>
 </head>
 
@@ -294,6 +307,87 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endforeach; ?>
         </div>
     </div>
+
+    <div class="container my-5 py-5 border-top">
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <div class="p-4 transition-hover">
+                    <i class="bi bi-shield-check text-danger" style="font-size: 3.5rem;"></i>
+                    <h4 class="fw-bold mt-4">ปลอดภัย 100%</h4>
+                    <p class="text-muted mt-2">ระบบการจองและเก็บข้อมูลที่ได้รับมาตรฐานสากล มั่นใจได้ในทุกการทำธุรกรรม</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 transition-hover">
+                    <i class="bi bi-headset text-danger" style="font-size: 3.5rem;"></i>
+                    <h4 class="fw-bold mt-4">บริการ 24 ชั่วโมง</h4>
+                    <p class="text-muted mt-2">ทีมงานซัพพอร์ตมืออาชีพ พร้อมดูแลและช่วยเหลือคุณตลอดการเข้าพัก</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 transition-hover">
+                    <i class="bi bi-tags text-danger" style="font-size: 3.5rem;"></i>
+                    <h4 class="fw-bold mt-4">ราคาดีที่สุด</h4>
+                    <p class="text-muted mt-2">รับประกันราคาห้องพักที่คุ้มค่าที่สุด ไม่มีบวกเพิ่มหรือค่าธรรมเนียมแอบแฝง</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-danger text-white py-5 text-center mt-5" style="background: linear-gradient(135deg, #ff385c 0%, #e31c5f 100%);">
+        <div class="container py-5">
+            <h2 class="display-5 fw-bold mb-3">พร้อมที่จะเริ่มการพักผ่อนของคุณหรือยัง?</h2>
+            <p class="fs-5 mb-4 text-white-80">สมัครสมาชิกวันนี้ เพื่อรับข้อเสนอสุดพิเศษและจัดการประวัติการจองได้ง่ายกว่าที่เคย</p>
+            <?php if (!isset($_SESSION['user_id'])): ?>
+                <a href="register.php" class="btn btn-light btn-lg rounded-pill px-5 py-3 fw-bold text-danger shadow-sm">สมัครสมาชิกฟรีทันที</a>
+            <?php else: ?>
+                <a href="#heroCarousel" class="btn btn-dark btn-lg rounded-pill px-5 py-3 fw-bold shadow-sm">ค้นหาที่พักเลย</a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light py-5">
+        <div class="container mt-4">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-geo-alt-fill text-danger"></i> Supreme Booking</h4>
+                    <p class="text-white pe-lg-4">แพลตฟอร์มจองที่พักระดับสากล มอบประสบการณ์การพักผ่อนที่ดีที่สุดให้คุณในทุกการเดินทาง ไม่ว่าจะเป็นทริปธุรกิจหรือวันหยุดพักผ่อน</p>
+                </div>
+
+                <div class="col-lg-2 col-md-6 offset-lg-2">
+                    <h5 class="fw-bold mb-4 text-white">เมนูหลัก</h5>
+                    <ul class="list-unstyled text-white">
+                        <li class="mb-2"><a href="index.php" class="text-white">หน้าแรก</a></li>
+                        <li class="mb-2"><a href="#" class="text-white">เกี่ยวกับเรา</a></li>
+                        <li class="mb-2"><a href="#" class="text-white">เงื่อนไขการจอง</a></li>
+                        <li class="mb-2"><a href="#" class="text-white">ติดต่อเรา</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h5 class="fw-bold mb-4 text-white">ติดตามเรา</h5>
+                    <p class="text-muted mb-3">รับข่าวสารและโปรโมชั่นใหม่ๆ ก่อนใคร</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="btn btn-outline-light rounded-circle" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="btn btn-outline-light rounded-circle" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light rounded-circle" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;"><i class="bi bi-twitter-x"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="mt-5 mb-4 border-secondary">
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center text-muted small">
+                <div class="mb-2 mb-md-0 text-white">
+                    &copy; <?php echo date('Y'); ?> Supreme Booking. All rights reserved.
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="#" class="text-white">Privacy Policy</a>
+                    <a href="#" class="text-white">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
