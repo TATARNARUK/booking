@@ -1,10 +1,9 @@
 <?php
-require_once 'lang.php'; // โหลดระบบภาษา
-/** @var string $current_lang */ // ซ่อนเส้นแดงแจ้งเตือนใน VS Code
-
+require_once 'lang.php';
+/** @var string $current_lang */
 require_once 'db.php';
 
-// 1. บังคับล็อกอิน: ถ้ายังไม่ล็อกอินให้ไปหน้า login ก่อน
+// บังคับล็อกอิน
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -16,7 +15,7 @@ $db = $database->connect();
 $message = '';
 $status = '';
 
-// 2. รับค่า room_id จาก URL
+// รับค่า room_id
 if (!isset($_GET['room_id']) || empty($_GET['room_id'])) {
     header("Location: index.php");
     exit();
@@ -36,27 +35,26 @@ if (!$room) {
     exit();
 }
 
-// เตรียมข้อมูล 2 ภาษาสำหรับแสดงผล
+// ข้อมูล 2 ภาษา
 $name_key = 'name_' . $current_lang;
 $desc_key = 'description_' . $current_lang;
 $display_name = !empty($room[$name_key]) ? $room[$name_key] : $room['name_th'];
 $display_desc = !empty($room[$desc_key]) ? $room[$desc_key] : $room['description_th'];
 
-// ดึงข้อมูลผู้ใช้ปัจจุบัน (เอาชื่อและเบอร์โทรมาใส่ฟอร์มอัตโนมัติ)
+// ดึงข้อมูลผู้ใช้
 $query_user = "SELECT * FROM users WHERE id = :user_id LIMIT 1";
 $stmt_user = $db->prepare($query_user);
 $stmt_user->bindParam(':user_id', $_SESSION['user_id']);
 $stmt_user->execute();
 $user = $stmt_user->fetch(PDO::FETCH_ASSOC);
 
-// 3. จัดการเมื่อผู้ใช้กดยืนยันการจอง (POST Request)
+// จัดการเมื่อกดยืนยันการจอง
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $check_in = $_POST['check_in'];
     $check_out = $_POST['check_out'];
     $customer_name = $user['first_name'] . ' ' . $user['last_name'];
     $customer_phone = $user['phone'];
 
-    // คำนวณจำนวนคืนและราคาฝั่ง Server
     $datetime1 = new DateTime($check_in);
     $datetime2 = new DateTime($check_out);
     $interval = $datetime1->diff($datetime2);
@@ -65,7 +63,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($days > 0) {
         $total_price = $days * $room['price'];
 
-        // บันทึกลงตาราง bookings
         $insert_booking = "INSERT INTO bookings (room_id, customer_name, customer_phone, check_in, check_out, total_price) 
                            VALUES (:room_id, :customer_name, :customer_phone, :check_in, :check_out, :total_price)";
         
@@ -96,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ยืนยันการจอง - <?php echo __('site_title'); ?></title>
+    <title><?php echo htmlspecialchars($display_name); ?> - Supreme Booking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -104,6 +101,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         body { font-family: 'Inter', 'Prompt', sans-serif; background-color: #f7f9fa; }
         .navbar-custom { background-color: #ffffff !important; box-shadow: 0 1px 15px rgba(0,0,0,0.05); padding: 15px 0; }
         .navbar-custom .nav-link { color: #222222 !important; font-weight: 600; }
+        .hero-image { width: 100%; height: 500px; object-fit: cover; border-radius: 24px; margin-bottom: 30px; }
+        .feature-icon { width: 40px; height: 40px; background-color: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 1.2rem; }
+        .sticky-booking-card { position: sticky; top: 100px; z-index: 10; }
     </style>
 </head>
 <body>
@@ -113,14 +113,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <a class="navbar-brand fw-bold text-danger fs-4" href="index.php">
                 <i class="bi bi-geo-alt-fill"></i> Supreme Booking
             </a>
-            
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    
                     <li class="nav-item me-3">
                         <div class="dropdown">
                             <button class="btn btn-light rounded-pill dropdown-toggle border" type="button" data-bs-toggle="dropdown">
@@ -132,7 +126,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </ul>
                         </div>
                     </li>
-
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle bg-light rounded-pill px-3 py-2 border" href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle fs-5 text-secondary align-middle me-1"></i> 
@@ -154,71 +147,131 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </nav>
 
     <div class="container my-5">
-        <div class="row">
-            <div class="col-md-5 mb-4">
-                <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
-                    <img src="<?php echo htmlspecialchars($room['image_url']); ?>" class="card-img-top" alt="Room Image" style="height: 350px; object-fit: cover;">
-                    <div class="card-body p-4">
-                        <h3 class="card-title fw-bold"><?php echo htmlspecialchars($display_name); ?></h3>
-                        <p class="text-muted"><?php echo htmlspecialchars($display_desc); ?></p>
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fs-5 text-muted">ราคาต่อคืน:</span>
-                            <span class="fs-4 fw-bold text-dark" id="roomPrice" data-price="<?php echo $room['price']; ?>">
-                                ฿<?php echo number_format($room['price'], 0); ?>
-                            </span>
+        <div class="row g-5">
+            
+            <div class="col-lg-8">
+                <img src="<?php echo htmlspecialchars($room['image_url']); ?>" class="hero-image shadow-sm" alt="Room Image">
+                
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h1 class="fw-bold mb-0 text-dark"><?php echo htmlspecialchars($display_name); ?></h1>
+                </div>
+                
+                <div class="d-flex gap-4 text-muted mb-4 border-bottom pb-4">
+                    <span><i class="bi bi-people-fill me-1"></i> ผู้เข้าพักสูงสุด <?php echo $room['capacity']; ?> ท่าน</span>
+                    <span><i class="bi bi-door-open-fill me-1"></i> 1 ห้องนอน 1 ห้องน้ำ</span>
+                    <span><i class="bi bi-star-fill text-warning me-1"></i> 4.9 (128 รีวิว)</span>
+                </div>
+
+                <h4 class="fw-bold mb-3">รายละเอียดที่พัก</h4>
+                <p class="text-muted" style="line-height: 1.8; font-size: 1.05rem;">
+                    <?php echo nl2br(htmlspecialchars($display_desc)); ?>
+                </p>
+
+                <hr class="my-5">
+
+                <h4 class="fw-bold mb-4">สิ่งอำนวยความสะดวกยอดนิยม</h4>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-primary"><i class="bi bi-wifi"></i></div>
+                        <span class="fs-5 text-dark">Wi-Fi ฟรีความเร็วสูง</span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-success"><i class="bi bi-car-front"></i></div>
+                        <span class="fs-5 text-dark">ที่จอดรถส่วนตัวฟรี</span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-info"><i class="bi bi-water"></i></div>
+                        <span class="fs-5 text-dark">สระว่ายน้ำกลางแจ้ง</span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-danger"><i class="bi bi-cup-hot"></i></div>
+                        <span class="fs-5 text-dark">รวมอาหารเช้า</span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-secondary"><i class="bi bi-tv"></i></div>
+                        <span class="fs-5 text-dark">สมาร์ททีวี 55 นิ้ว (Netflix)</span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="feature-icon text-primary"><i class="bi bi-snow"></i></div>
+                        <span class="fs-5 text-dark">เครื่องปรับอากาศทุกห้อง</span>
+                    </div>
+                </div>
+
+                <hr class="my-5">
+                
+                <h4 class="fw-bold mb-4">ข้อควรรู้ก่อนเข้าพัก</h4>
+                <div class="bg-light rounded-4 p-4">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3 mb-sm-0">
+                            <h6 class="fw-bold"><i class="bi bi-clock me-2"></i> เช็คอิน / เช็คเอาต์</h6>
+                            <p class="text-muted mb-0 small">เช็คอินตั้งแต่: 14:00 น.<br>เช็คเอาต์ก่อน: 12:00 น.</p>
+                        </div>
+                        <div class="col-sm-6">
+                            <h6 class="fw-bold"><i class="bi bi-shield-x me-2"></i> นโยบายการยกเลิก</h6>
+                            <p class="text-muted mb-0 small">ยกเลิกฟรีภายใน 48 ชั่วโมงหลังจากทำการจอง หากยกเลิกหลังจากนั้นจะมีการหักค่าธรรมเนียม</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-7">
-                <div class="card border-0 shadow rounded-4">
-                    <div class="card-header bg-white py-4 border-bottom-0">
-                        <h4 class="mb-0 fw-bold">ระบุวันที่ต้องการเข้าพัก</h4>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-lg rounded-4 p-4 sticky-booking-card">
+                    
+                    <div class="d-flex align-items-end mb-4">
+                        <h2 class="fw-bold mb-0 text-dark" id="roomPrice" data-price="<?php echo $room['price']; ?>">
+                            ฿<?php echo number_format($room['price'], 0); ?>
+                        </h2>
+                        <span class="text-muted ms-2 mb-1">/ <?php echo __('night'); ?></span>
                     </div>
-                    <div class="card-body p-4">
 
-                        <?php if($message != ''): ?>
-                            <div class="alert alert-<?php echo $status == 'success' ? 'success' : 'danger'; ?> rounded-4" role="alert">
-                                <?php echo $message; ?>
-                                <?php if($status == 'success'): ?>
-                                    <br><a href="index.php" class="btn btn-outline-success rounded-pill mt-3 px-4">กลับหน้าแรก</a>
-                                <?php endif; ?>
+                    <?php if($message != ''): ?>
+                        <div class="alert alert-<?php echo $status == 'success' ? 'success' : 'danger'; ?> rounded-4 text-center py-3">
+                            <i class="bi bi-check-circle-fill fs-1 d-block mb-2"></i>
+                            <strong><?php echo $message; ?></strong>
+                            <?php if($status == 'success'): ?>
+                                <br><a href="my_bookings.php" class="btn btn-outline-success rounded-pill mt-3 w-100">ดูประวัติการจอง</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if($status != 'success'): ?>
+                        <form action="book_room.php?room_id=<?php echo $room_id; ?>" method="POST">
+                            
+                            <div class="border rounded-4 p-3 mb-3">
+                                <label class="form-label text-muted small fw-bold mb-1">ชื่อผู้จอง</label>
+                                <input type="text" class="form-control bg-transparent border-0 p-0 fw-bold text-dark" value="<?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>" readonly>
                             </div>
-                        <?php endif; ?>
 
-                        <?php if($status != 'success'): ?>
-                            <form action="book_room.php?room_id=<?php echo $room_id; ?>" method="POST">
-                                
-                                <div class="mb-4">
-                                    <label class="form-label text-muted">ชื่อผู้จอง (ดึงจากระบบอัตโนมัติ)</label>
-                                    <input type="text" class="form-control bg-light border-0 py-2" value="<?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>" readonly>
+                            <div class="d-flex border rounded-4 mb-4 overflow-hidden">
+                                <div class="w-50 p-3 border-end">
+                                    <label class="form-label text-muted small fw-bold mb-1">เช็คอิน</label>
+                                    <input type="date" name="check_in" id="checkIn" class="form-control bg-transparent border-0 p-0" min="<?php echo date('Y-m-d'); ?>" required>
                                 </div>
-
-                                <div class="row mb-4">
-                                    <div class="col-md-6 mb-3 mb-md-0">
-                                        <label class="form-label fw-bold">วันเช็คอิน</label>
-                                        <input type="date" name="check_in" id="checkIn" class="form-control py-2" min="<?php echo date('Y-m-d'); ?>" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold">วันเช็คเอาต์</label>
-                                        <input type="date" name="check_out" id="checkOut" class="form-control py-2" required>
-                                    </div>
+                                <div class="w-50 p-3">
+                                    <label class="form-label text-muted small fw-bold mb-1">เช็คเอาต์</label>
+                                    <input type="date" name="check_out" id="checkOut" class="form-control bg-transparent border-0 p-0" required>
                                 </div>
+                            </div>
 
-                                <div class="alert bg-light border rounded-4 p-4 d-flex justify-content-between align-items-center mb-4">
-                                    <span class="fs-5 text-muted">สรุปยอดชำระ (<span id="totalNights" class="fw-bold text-dark">0</span> คืน)</span>
-                                    <span class="fs-2 fw-bold text-danger">฿<span id="totalPrice">0</span></span>
-                                </div>
+                            <button type="submit" class="btn btn-danger w-100 py-3 fs-5 fw-bold rounded-pill shadow-sm mb-4 transition-hover" id="btnSubmit" disabled>จองห้องพัก</button>
 
-                                <button type="submit" class="btn btn-danger w-100 py-3 fs-5 fw-bold rounded-pill shadow-sm" id="btnSubmit" disabled>ยืนยันการจองห้องพัก</button>
-                            </form>
-                        <?php endif; ?>
-
-                    </div>
+                            <div class="d-flex justify-content-between text-muted mb-2">
+                                <span>฿<?php echo number_format($room['price'], 0); ?> x <span id="totalNights">0</span> คืน</span>
+                                <span>฿<span id="subTotal">0</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted mb-3 border-bottom pb-3">
+                                <span>ค่าธรรมเนียมบริการ</span>
+                                <span>฿0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fs-5 fw-bold text-dark">ยอดรวมทั้งหมด</span>
+                                <span class="fs-4 fw-bold text-dark">฿<span id="totalPrice">0</span></span>
+                            </div>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
+            
         </div>
     </div>
 
@@ -226,6 +279,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         const checkInInput = document.getElementById('checkIn');
         const checkOutInput = document.getElementById('checkOut');
         const totalNightsSpan = document.getElementById('totalNights');
+        const subTotalSpan = document.getElementById('subTotal');
         const totalPriceSpan = document.getElementById('totalPrice');
         const btnSubmit = document.getElementById('btnSubmit');
         const roomPrice = parseFloat(document.getElementById('roomPrice').getAttribute('data-price'));
@@ -234,33 +288,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             const checkInDate = new Date(checkInInput.value);
             const checkOutDate = new Date(checkOutInput.value);
 
-            // เซ็ตให้วันเช็คเอาต์ต้องเลือกหลังวันเช็คอินเสมอ
             if(checkInInput.value) {
                 let minCheckOut = new Date(checkInDate);
                 minCheckOut.setDate(minCheckOut.getDate() + 1);
                 checkOutInput.min = minCheckOut.toISOString().split('T')[0];
             }
 
-            // ถ้าเลือกครบ 2 วันแล้ว ให้คำนวณราคา
             if (checkInInput.value && checkOutInput.value) {
                 const timeDifference = checkOutDate.getTime() - checkInDate.getTime();
                 const nightCount = Math.ceil(timeDifference / (1000 * 3600 * 24));
 
                 if (nightCount > 0) {
                     totalNightsSpan.textContent = nightCount;
-                    // แปลงตัวเลขให้มีคอมม่า (เช่น 2,500)
-                    totalPriceSpan.textContent = (nightCount * roomPrice).toLocaleString('en-US', {minimumFractionDigits: 0});
-                    btnSubmit.disabled = false; // เปิดปุ่มให้กดจองได้
+                    const total = nightCount * roomPrice;
+                    subTotalSpan.textContent = total.toLocaleString('en-US');
+                    totalPriceSpan.textContent = total.toLocaleString('en-US');
+                    
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "จองห้องพักเลย";
                 } else {
-                    totalNightsSpan.textContent = "0";
-                    totalPriceSpan.textContent = "0";
-                    btnSubmit.disabled = true;
+                    resetSummary();
                 }
+            } else {
+                resetSummary();
             }
+        }
+
+        function resetSummary() {
+            totalNightsSpan.textContent = "0";
+            subTotalSpan.textContent = "0";
+            totalPriceSpan.textContent = "0";
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "โปรดเลือกวันเข้าพัก";
         }
 
         checkInInput.addEventListener('change', calculatePrice);
         checkOutInput.addEventListener('change', calculatePrice);
+        resetSummary(); // ล็อกปุ่มไว้ตั้งแต่เริ่ม
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

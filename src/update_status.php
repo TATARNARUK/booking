@@ -2,26 +2,29 @@
 session_start();
 require_once 'db.php';
 
-// ตรวจสอบความปลอดภัย
+// ป้องกันคนที่ไม่ใช่ Admin แอบเข้ามาใช้ไฟล์นี้
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    exit('Unauthorized');
+    header("Location: index.php");
+    exit();
 }
 
 if (isset($_GET['id']) && isset($_GET['status'])) {
-    $database = new Database();
-    $db = $database->connect();
+    $db = (new Database())->connect();
+    $id = $_GET['id'];
+    $status = $_GET['status']; // รับค่า confirmed หรือ cancelled
+
+    // อัปเดตสถานะในตาราง bookings
+    $stmt = $db->prepare("UPDATE bookings SET status = :status WHERE id = :id");
     
-    $booking_id = $_GET['id'];
-    $new_status = $_GET['status']; // 'confirmed' หรือ 'cancelled'
-
-    $query = "UPDATE bookings SET status = :status WHERE id = :id";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':status', $new_status);
-    $stmt->bindParam(':id', $booking_id);
-
-    if ($stmt->execute()) {
-        header("Location: admin_dashboard.php");
+    if ($stmt->execute([':status' => $status, ':id' => $id])) {
+        // อัปเดตเสร็จให้เด้งกลับไปหน้า Dashboard อัตโนมัติ
+        header("Location: admin_dashboard.php?msg=updated");
         exit();
+    } else {
+        echo "เกิดข้อผิดพลาดในการอัปเดตสถานะ";
     }
+} else {
+    header("Location: admin_dashboard.php");
+    exit();
 }
 ?>

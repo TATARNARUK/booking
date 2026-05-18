@@ -6,7 +6,7 @@ require_once 'db.php';
 $database = new Database();
 $db = $database->connect();
 
-$query = "SELECT * FROM rooms";
+$query = "SELECT * FROM rooms ORDER BY id DESC";
 $stmt = $db->prepare($query);
 $stmt->execute();
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);

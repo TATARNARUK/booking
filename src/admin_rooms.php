@@ -32,6 +32,7 @@ if (isset($_GET['delete'])) {
 
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard - Supreme Booking</title>
@@ -73,24 +74,24 @@ if (isset($_GET['delete'])) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($rooms as $room): ?>
-                            <tr class="align-middle">
-                                <td class="ps-4">
-                                    <img src="<?php echo htmlspecialchars($room['image_url']); ?>" class="rounded-3" style="width: 80px; height: 60px; object-fit: cover;">
-                                </td>
-                                <td>
-                                    <div class="fw-bold text-dark"><?php echo htmlspecialchars($room['name']); ?></div>
-                                    <small class="text-muted d-block text-truncate" style="max-width: 250px;">
-                                        <?php echo htmlspecialchars($room['description']); ?>
-                                    </small>
-                                </td>
-                                <td class="fw-bold">฿<?php echo number_format($room['price'], 0); ?></td>
-                                <td><i class="bi bi-people me-1"></i> <?php echo $room['capacity']; ?> ท่าน</td>
-                                <td class="text-end pe-4">
-                                    <a href="admin_room_edit.php?id=<?php echo $room['id']; ?>" class="btn btn-sm btn-outline-secondary rounded-pill me-1">แก้ไข</a>
-                                    <a href="?delete=<?php echo $room['id']; ?>" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบห้องนี้?')">ลบ</a>
-                                </td>
-                            </tr>
+                            <?php foreach ($rooms as $room): ?>
+                                <tr class="align-middle">
+                                    <td class="ps-4">
+                                        <img src="<?php echo htmlspecialchars($room['image_url']); ?>" class="rounded-3" style="width: 80px; height: 60px; object-fit: cover;">
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($room['name_th']); ?></div>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 250px;">
+                                            <?php echo htmlspecialchars($room['description_th']); ?>
+                                        </small>
+                                    </td>
+                                    <td class="fw-bold">฿<?php echo number_format($room['price'], 0); ?></td>
+                                    <td><i class="bi bi-people me-1"></i> <?php echo $room['capacity']; ?> ท่าน</td>
+                                    <td class="text-end pe-4">
+                                        <a href="admin_room_edit.php?id=<?php echo $room['id']; ?>" class="btn btn-sm btn-outline-secondary rounded-pill me-1">แก้ไข</a>
+                                        <a href="?delete=<?php echo $room['id']; ?>" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('คุณแน่ใจหรือไม่ที่จะลบห้องนี้?')">ลบ</a>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -100,4 +101,5 @@ if (isset($_GET['delete'])) {
     </div>
 
 </body>
+
 </html>
