@@ -2,51 +2,52 @@
 session_start();
 require_once 'db.php';
 
-$message = '';
-$status = '';
+if (isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
 
-// เช็คว่ามีการกดปุ่ม Submit ฟอร์มมาหรือไม่
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $database = new Database();
-    $db = $database->connect();
+$error = '';
 
-    // รับค่าจากฟอร์ม (ตัดเรื่องที่อยู่ออกไป)
-    $first_name = htmlspecialchars(trim($_POST['first_name']));
-    $last_name = htmlspecialchars(trim($_POST['last_name']));
-    $email = htmlspecialchars(trim($_POST['email']));
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
     $password = $_POST['password'];
-    $phone = htmlspecialchars(trim($_POST['phone']));
+    $confirm_password = $_POST['confirm_password'];
 
-    // เช็คว่าอีเมลนี้ซ้ำในระบบหรือไม่
-    $check_query = "SELECT id FROM users WHERE email = :email";
-    $check_stmt = $db->prepare($check_query);
-    $check_stmt->bindParam(':email', $email);
-    $check_stmt->execute();
-
-    if ($check_stmt->rowCount() > 0) {
-        $status = 'error';
-        $message = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
+    if ($password !== $confirm_password) {
+        $error = 'รหัสผ่านทั้งสองช่องไม่ตรงกัน';
     } else {
-        // เข้ารหัสรหัสผ่าน (มาตรฐานสากลความปลอดภัย)
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        // บันทึกข้อมูลลงฐานข้อมูล (ใส่แค่ข้อมูลที่จำเป็น)
-        $insert_query = "INSERT INTO users (first_name, last_name, email, password, phone) 
-                         VALUES (:first_name, :last_name, :email, :password, :phone)";
+        $db = (new Database())->connect();
         
-        $stmt = $db->prepare($insert_query);
-        $stmt->bindParam(':first_name', $first_name);
-        $stmt->bindParam(':last_name', $last_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashed_password);
-        $stmt->bindParam(':phone', $phone);
-
-        if ($stmt->execute()) {
-            $status = 'success';
-            $message = 'สมัครสมาชิกสำเร็จ! คุณสามารถเข้าสู่ระบบได้ทันที';
+        // เช็คอีเมลซ้ำ
+        $stmt_check = $db->prepare("SELECT id FROM users WHERE email = :email LIMIT 1");
+        $stmt_check->bindParam(':email', $email);
+        $stmt_check->execute();
+        
+        if ($stmt_check->fetch()) {
+            $error = 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น';
         } else {
-            $status = 'error';
-            $message = 'เกิดข้อผิดพลาดในการสมัครสมาชิก โปรดลองอีกครั้ง';
+            // เข้ารหัสผ่านเพื่อความปลอดภัยขั้นสุด
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $role = 'user'; // ค่าเริ่มต้นคือ user ธรรมดา
+
+            $stmt = $db->prepare("INSERT INTO users (first_name, last_name, email, phone, password, role) VALUES (:first_name, :last_name, :email, :phone, :password, :role)");
+            $stmt->bindParam(':first_name', $first_name);
+            $stmt->bindParam(':last_name', $last_name);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':phone', $phone);
+            $stmt->bindParam(':password', $hashed_password);
+            $stmt->bindParam(':role', $role);
+
+            if ($stmt->execute()) {
+                header("Location: login.php?registered=1");
+                exit();
+            } else {
+                $error = 'เกิดข้อผิดพลาดในการสมัครสมาชิก โปรดลองอีกครั้ง';
+            }
         }
     }
 }
@@ -58,78 +59,98 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก - Supreme Booking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; }
+        .split-layout { min-height: 100vh; display: flex; }
+        .bg-image-side { 
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://picsum.photos/seed/register_bg/1000/1200') center/cover no-repeat;
+            flex: 1; 
+        }
+        .form-side { flex: 1.5; display: flex; align-items: center; justify-content: center; background: #fff; padding: 2rem; overflow-y: auto; }
+        .form-container { width: 100%; max-width: 500px; margin: auto; padding-top: 2rem; padding-bottom: 2rem;}
+        .form-floating > label { color: #6c757d; }
+        .form-control:focus { border-color: #ff385c; box-shadow: 0 0 0 0.25rem rgba(255, 56, 92, 0.25); }
+        .btn-brand { background-color: #ff385c; border-color: #ff385c; color: white; transition: all 0.3s; }
+        .btn-brand:hover { background-color: #e31c5f; border-color: #e31c5f; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(227, 28, 95, 0.3); }
+        @media (max-width: 991.98px) { .bg-image-side { display: none; } }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-    <!-- Navbar เบื้องต้น -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">🏨 Supreme Booking</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php">หน้าแรก</a></li>
-                </ul>
+    <div class="split-layout">
+        <div class="bg-image-side d-none d-lg-block position-relative order-lg-2">
+            <div class="position-absolute bottom-0 end-0 p-5 text-white text-end">
+                <h2 class="fw-bold fs-1 mb-2">เป็นส่วนหนึ่งกับเรา</h2>
+                <p class="fs-5 opacity-75">สมัครสมาชิกวันนี้ เพื่อรับข้อเสนอสุดพิเศษและจัดการประวัติการจองได้ง่ายกว่าที่เคย</p>
             </div>
         </div>
-    </nav>
 
-    <div class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-md-7">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white text-center py-3">
-                        <h4 class="mb-0">สร้างบัญชีผู้ใช้ใหม่</h4>
+        <div class="form-side shadow-lg order-lg-1">
+            <div class="form-container">
+                <div class="mb-4">
+                    <a href="index.php" class="text-decoration-none">
+                        <h2 class="fw-bold text-danger mb-0"><i class="bi bi-geo-alt-fill"></i> Supreme Booking</h2>
+                    </a>
+                    <h3 class="fw-bold mt-4">สร้างบัญชีผู้ใช้ใหม่</h3>
+                    <p class="text-muted">กรอกข้อมูลด้านล่างเพื่อเริ่มการเดินทางของคุณ</p>
+                </div>
+
+                <?php if ($error): ?>
+                    <div class="alert alert-danger rounded-4 d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div><?php echo $error; ?></div>
                     </div>
-                    <div class="card-body p-4">
-                        
-                        <!-- แสดงข้อความแจ้งเตือน -->
-                        <?php if($message != ''): ?>
-                            <div class="alert alert-<?php echo $status == 'success' ? 'success' : 'danger'; ?> alert-dismissible fade show" role="alert">
-                                <?php echo $message; ?>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        <?php endif; ?>
+                <?php endif; ?>
 
-                        <form action="register.php" method="POST">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">ชื่อจริง</label>
-                                    <input type="text" name="first_name" class="form-control" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">นามสกุล</label>
-                                    <input type="text" name="last_name" class="form-control" required>
-                                </div>
+                <form action="register.php" method="POST">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control rounded-4" id="first_name" name="first_name" placeholder="ชื่อ" required>
+                                <label for="first_name">ชื่อจริง</label>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">อีเมล</label>
-                                <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control rounded-4" id="last_name" name="last_name" placeholder="นามสกุล" required>
+                                <label for="last_name">นามสกุล</label>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">รหัสผ่าน</label>
-                                <input type="password" name="password" class="form-control" minlength="6" required>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label">เบอร์โทรศัพท์</label>
-                                <input type="tel" name="phone" class="form-control" required>
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-100 py-2 fs-5">สมัครสมาชิก</button>
-                            <div class="text-center mt-3">
-                                <p>มีบัญชีอยู่แล้ว? <a href="login.php" class="text-decoration-none">เข้าสู่ระบบที่นี่</a></p>
-                            </div>
-                        </form>
-
+                        </div>
                     </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control rounded-4" id="email" name="email" placeholder="name@example.com" required>
+                        <label for="email"><i class="bi bi-envelope me-1"></i> อีเมล</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="tel" class="form-control rounded-4" id="phone" name="phone" placeholder="08X-XXX-XXXX" required>
+                        <label for="phone"><i class="bi bi-telephone me-1"></i> เบอร์โทรศัพท์</label>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control rounded-4" id="password" name="password" placeholder="Password" required minlength="6">
+                        <label for="password"><i class="bi bi-lock me-1"></i> รหัสผ่าน (ขั้นต่ำ 6 ตัวอักษร)</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control rounded-4" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
+                        <label for="confirm_password"><i class="bi bi-shield-lock me-1"></i> ยืนยันรหัสผ่าน</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100 py-3 rounded-pill fw-bold fs-5 mb-4">สมัครสมาชิกเลย</button>
+                </form>
+
+                <div class="text-center text-muted">
+                    มีบัญชีอยู่แล้วใช่ไหม? <a href="login.php" class="text-danger fw-bold text-decoration-none">เข้าสู่ระบบ</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
